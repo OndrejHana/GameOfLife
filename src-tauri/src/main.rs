@@ -6,8 +6,6 @@
 use rand::Rng;
 use tauri::{ command, generate_handler };
 
-
-
 fn main() {
   tauri::Builder::default()
     .invoke_handler(generate_handler![vytvor_mapu])
@@ -19,19 +17,13 @@ fn main() {
 fn vytvor_mapu(rozliseni: u32, window: tauri::Window) {
   let mut mapa = Hra::new(rozliseni);
   window.emit("update_table", &mapa.mapa).unwrap();
-  
-  for i in 0..100 {
-    mapa.dalsi_generace();
-    window.emit("update_table", &mapa.mapa);
-  }
-  println!("finito");
+  window.listen("start_event", |event| {
+    start(mapa);
+  }); 
 }
 
-#[command]
-fn start() {
-  loop {
-    
-  }
+fn start(mut hra: Hra) {
+
 }
 
 #[derive(Debug)]
