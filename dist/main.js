@@ -1,5 +1,5 @@
 const invoke = window.__TAURI__.invoke;
-const huh = window.__TAURI__.event;
+const tauri_event = window.__TAURI__.event;
 
 const Mapa = {
   rozliseni: 0,
@@ -25,12 +25,18 @@ const napln_mapu = () => {
   }
 };
 
-const vytvor_mapu = () => {
-  Mapa.rozliseni = document.getElementById('rozliseni_mapy').value;
-  Mapa.policka = new Array(Mapa.rozliseni * Mapa.rozliseni).fill(true);
-  invoke('vytvor_mapu', { rozliseni: parseInt(Mapa.rozliseni) });
+const vytvor_mapu_button = document.getElementById('vytvor_mapu_button');
+const start_button = document.getElementById('start_button');
+let stav = false;
+
+vytvor_mapu_button.onclick = () => {
+    Mapa.rozliseni = document.getElementById('rozliseni_mapy').value;
+    Mapa.policka = new Array(Mapa.rozliseni*Mapa.rozliseni);
+    start_button.style.visibility = 'visible';
+    start_button.setAttribute('class', 'btn btn-primary');
+    napln_mapu();
+    invoke('vytvor_mapu', {rozliseni: parseInt(Mapa.rozliseni)});
 };
-document.getElementById('vytvor_mapu_button').onclick = vytvor_mapu;
 
 huh.listen('update_table', (event) => {
   Mapa.policka = event.payload;
