@@ -18,12 +18,12 @@ fn vytvor_mapu(rozliseni: u32, window: tauri::Window) {
   let mut mapa = Hra::new(rozliseni);
   window.emit("update_table", &mapa.mapa).unwrap();
   window.listen("start_event", |event| {
-    start(mapa);
+    start();
   }); 
 }
 
-fn start(mut hra: Hra) {
-
+fn start() {
+  println!("start!");
 }
 
 #[derive(Debug)]
