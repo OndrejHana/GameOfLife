@@ -3,26 +3,36 @@
     windows_subsystem = "windows"
 )]
 
+use std::sync::Arc;
+
 use rand::Rng;
-use tauri::{ command, generate_handler };
+use tauri::{ command, Manager, generate_handler };
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(generate_handler![vytvor_mapu])
+        .setup(|app| {
+            let window = app.get_window("main").unwrap();
+
+            let mut hra: Option<Hra> = None;
+            window.listen("create-map", |event| {
+                match event.payload() {
+                    Some(payload) => {
+                        let rozliseni = payload.parse::<u32>().unwrap();
+                        hra = Some(Hra::new(rozliseni));
+                    }, 
+                    None => {
+                        println!("Error: No payload");
+                    },
+                }
+                // println!("{:?}", &hra);
+                // hra = Some(Hra::new(Arc::new(event.payload().unwrap())));
+            });
+
+            Ok(())
+        })
+        .invoke_handler(generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[command]
-fn vytvor_mapu(rozliseni: u32, window: tauri::Window) {
-  let mut mapa = Hra::new(rozliseni);
-  window.emit("update_table", &mapa.mapa).unwrap();
-  window.listen("start_event", |event| {
-    start();
-  }); 
-}
-
-fn start() {
 }
 
 #[derive(Debug)]
