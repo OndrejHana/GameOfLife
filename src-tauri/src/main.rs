@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use rand::{self, Rng};
-use std::sync::Mutex;
+use std::sync::{Mutex, atomic::AtomicBool, Arc};
 
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
@@ -30,6 +30,8 @@ impl Map {
             map
         };
     }
+
+
 
     fn neigh_count(&self, x: isize, y: isize) -> u8 {
         let res = self.map.len() as isize;
@@ -82,11 +84,18 @@ fn init(app: tauri::AppHandle) -> Map {
 
 #[tauri::command]
 fn start(app: tauri::AppHandle) {
+    let pending_stop = Arc::new(AtomicBool::new(false));
+
+    let pending_stop_clone = pending_stop.clone();
+    app.listen_global("stop", move |_event| {
+        pending_stop_clone.swap(true, std::sync::atomic::Ordering::AcqRel);
+    });
+
     std::thread::spawn(move || {
         let state = app.state::<Mutex<Map>>();
         let mut state = state.lock().unwrap();
 
-        loop {
+        while !pending_stop.load(std::sync::atomic::Ordering::Acquire) {
             let resolution = state.map.len();
             let mut new_map = vec![vec![false;resolution];resolution];
 
@@ -135,9 +144,20 @@ fn start(app: tauri::AppHandle) {
     });
 }
 
+#[tauri::command]
+fn reset(app: tauri::AppHandle) -> Map {
+    let state = app.state::<Mutex<Map>>();
+    let mut state = state.lock().unwrap();
+
+    let new_map = Map::new(32);
+    state.clone_from(&new_map);
+
+    return new_map;
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![start, init])
+        .invoke_handler(tauri::generate_handler![start, init, reset])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
